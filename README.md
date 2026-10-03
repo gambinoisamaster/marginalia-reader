@@ -1,4 +1,4 @@
-# Marginalia
+# Marginalia Reader
 
 **A reading companion for [Claude Code](https://claude.com/claude-code) that helps you remember what you read.**
 
@@ -28,7 +28,7 @@ you › 1. guy is plowing in november and wrecks a mouse's nest. feels bad,
 
 ## Why it works
 
-Most of us read for input and keep very little. The fix is well established. **Retrieval practice** (trying to recall what you read, in your own words) and **spacing** (coming back to it over days and weeks) are among the most effective learning techniques known. Rereading and highlighting feel productive but do little. Marginalia builds both into a ten-minute habit:
+Most of us read for input and keep very little. The fix is well established. **Retrieval practice** (trying to recall what you read, in your own words) and **spacing** (coming back to it over days and weeks) are among the most effective learning techniques known. Rereading and highlighting feel productive but do little. Marginalia Reader builds both into a ten-minute habit:
 
 - **Bookends.** Recall last time before you start, and recall what you just read before you stop.
 - **Good questions.** They're built on Mortimer Adler's four questions from *How to Read a Book* (What is it about? What is being said, and how? Is it true? What of it?), adapted to novels, essays, nonfiction, poetry, plays, craft books, and daily reading plans.
@@ -58,7 +58,7 @@ Most of us read for input and keep very little. The fix is well established. **R
 You need [Claude Code](https://claude.com/claude-code) (desktop app, terminal, or IDE extension) and Python 3.9 or later. On a Mac, Python comes with the Xcode command line tools (`xcode-select --install`). It's tested on macOS and should work on Linux. Windows is untested.
 
 ```bash
-git clone https://github.com/gambinoisamaster/marginalia ~/.claude/skills/marginalia
+git clone https://github.com/gambinoisamaster/marginalia-reader ~/.claude/skills/marginalia
 ```
 
 Then type `/marginalia` in Claude Code. The first time, it creates your journal in `~/Documents/Marginalia` and asks what you're reading.
