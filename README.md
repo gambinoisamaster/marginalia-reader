@@ -49,7 +49,7 @@ Most of us read for input and keep very little. The fix is well established. **R
 - **No spoilers.** It only talks about what you've already read, and that includes famous books.
 - A running *Previously on…* recap and cast list for each book (a lifesaver for Russian novels).
 - Questions tuned to the kind of book: plot and character for novels, argument for nonfiction, image and form for poetry, and short exercises for books about writing.
-- Reading plans, with the Harvard Classics *Fifteen Minutes a Day* guide included (January so far).
+- Reading plans, with the complete Harvard Classics *Fifteen Minutes a Day* guide included: all 366 days.
 - A commonplace book for lines worth keeping, plus weekly and monthly reflections.
 - Scanning from iPhone to Mac with Continuity Camera.
 
@@ -126,7 +126,7 @@ python3 ~/.claude/skills/marginalia/scripts/journal.py due
 ## Contributing
 
 Contributions are welcome, especially:
-- more months of the Harvard Classics guide (follow the format in `plans/harvard-classics.md`)
+- corrections to the Harvard Classics plan (`plans/harvard-classics.md`) from anyone with the volumes at hand
 - other public-domain reading plans
 - question lenses for kinds of books not covered yet
 - bug reports from real reading sessions
