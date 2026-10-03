@@ -82,9 +82,17 @@ A plan has two files:
       Hook: <the teaser, in your own words>
       Note: <the guide's anniversary note, if any>
 
-- `books/<slug>.md`: the log. Like a book file, except it keeps **Readings so far** in place of *Previously on…* and *People so far*, one line per entry, followed by the session log:
+- `books/<slug>.md`: the log. If the reader owns the texts as PDFs, its *About* section names them, so plan days need no photos:
+
+      - **Your copies:** `~/Ebooks/Harvard Classics/` · Vol. N is `NNN_Harvard_Classics.pdf` (e.g. `038_…` for Vol. 38)
+
+  Like a book file, except it keeps **Readings so far** in place of *Previously on…* and *People so far*, one line per entry, followed by the session log:
 
       - **Jan 25** · Burns, "To a Mouse" · read 2026-10-03 — <their takeaway, in their words where possible>
+
+## .pages/
+
+Temporary page extracts from `journal.py pages`, replaced on every run. `offsets.json` remembers each PDF's page offset. Safe to delete.
 
 ## commonplace.md
 

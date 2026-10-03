@@ -22,6 +22,8 @@ Commands
   archive  FILE... | --all             move processed inbox files to inbox/done/<date>/
   plans                                reading plans bundled with the skill
   add-plan NAME                        copy a bundled plan into the journal
+  pages    PDF RANGES [--offset N]     pull printed pages (e.g. 398-405 or 337,395-410) out of a
+                                       PDF the reader owns, as files of up to 10 pages (macOS)
 
 Every command accepts --today YYYY-MM-DD for testing. The journal lives in
 ~/Documents/Marginalia unless MARGINALIA_HOME points elsewhere.
@@ -31,10 +33,12 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
+from collections import Counter
 from contextlib import contextmanager
 from datetime import date, timedelta
 from pathlib import Path
@@ -55,6 +59,10 @@ INTERVALS = {1: 1, 2: 3, 3: 7, 4: 21, 5: 60}
 RESULTS = ("got", "partial", "missed")
 READABLE = {".jpg", ".jpeg", ".png", ".gif", ".webp", ".pdf", ".txt", ".md"}
 HEIC = {".heic", ".heif"}
+PDF_HELPER_SRC = SKILL_DIR / "scripts" / "pdftool.swift"
+PDF_HELPER = Path.home() / "Library" / "Caches" / "marginalia" / "pdftool"
+CHUNK = 10  # Claude Code reads a PDF of up to 10 pages without extra tools
+DIGITISH = str.maketrans("OoIl", "0011")  # OCR often prints page numbers like "4O9"
 
 
 def home() -> Path:
@@ -407,6 +415,114 @@ def cmd_add_plan(args, today: date) -> None:
     print(f"Copied {args.name} to {dest}")
 
 
+def pdf_helper() -> Path:
+    if sys.platform != "darwin":
+        sys.exit("Reading pages from your own PDFs needs macOS for now. Send photos of the pages instead.")
+    if not PDF_HELPER.exists() or PDF_HELPER.stat().st_mtime < PDF_HELPER_SRC.stat().st_mtime:
+        if not shutil.which("swiftc"):
+            sys.exit("The PDF helper needs Apple's command line tools: run `xcode-select --install`, then try again.")
+        PDF_HELPER.parent.mkdir(parents=True, exist_ok=True)
+        print("(building the PDF helper; this happens once and takes a few seconds)")
+        built = subprocess.run(["swiftc", "-O", str(PDF_HELPER_SRC), "-o", str(PDF_HELPER)],
+                               capture_output=True, text=True)
+        if built.returncode != 0:
+            sys.exit(f"Couldn't build the PDF helper:\n{built.stderr.strip()}")
+    return PDF_HELPER
+
+
+def run_helper(*args) -> str:
+    done = subprocess.run([str(pdf_helper()), *map(str, args)], capture_output=True, text=True)
+    if done.returncode != 0:
+        sys.exit(done.stderr.strip() or "The PDF helper failed.")
+    return done.stdout
+
+
+def head_number(line: str) -> int | None:
+    """The printed page number in a running head: its first or last token, if that's a number."""
+    tokens = line.split()
+    for token in tokens[:1] + tokens[-1:]:
+        token = token.strip(".,;:")
+        if re.fullmatch(r"[0-9OoIl]{1,4}", token) and any(c.isdigit() for c in token):
+            return int(token.translate(DIGITISH))
+    return None
+
+
+def pick_offset(numbers: dict[int, int]) -> int | None:
+    """The most common (PDF page - printed page) among pages whose number could be read.
+
+    One misread number can't win: at least two pages have to agree.
+    """
+    votes = Counter(pdf_page - printed for pdf_page, printed in numbers.items())
+    if not votes:
+        return None
+    offset, count = votes.most_common(1)[0]
+    return offset if count >= 2 else None
+
+
+def parse_ranges(text: str) -> list[tuple[int, int]]:
+    cleaned = text.replace("–", "-").replace("—", "-").replace("pp.", "").replace("p.", "")
+    ranges = []
+    for part in re.split(r"[,;]|\balso\b", cleaned):
+        part = part.strip()
+        if not part:
+            continue
+        m = re.fullmatch(r"(\d+)\s*(?:-\s*(\d+))?", part)
+        if not m or int(m.group(2) or m.group(1)) < int(m.group(1)):
+            sys.exit(f"Can't read the page range {text!r}. Use something like 398-405 or 337,395-410.")
+        ranges.append((int(m.group(1)), int(m.group(2) or m.group(1))))
+    if not ranges:
+        sys.exit("Give the printed pages to pull out, e.g. 398-405.")
+    return ranges
+
+
+def cmd_pages(args, today: date) -> None:
+    pdf = Path(args.pdf).expanduser().resolve()
+    if not pdf.is_file():
+        sys.exit(f"No PDF at {pdf}")
+    ranges = parse_ranges(args.pages)
+    total = int(run_helper("count", pdf).strip())
+    out_dir = home() / ".pages"
+    out_dir.mkdir(parents=True, exist_ok=True)
+    cache_file = out_dir / "offsets.json"
+    cache = json.loads(cache_file.read_text(encoding="utf-8")) if cache_file.exists() else {}
+
+    offset = args.offset
+    if offset is None:
+        # Read the running heads from just before the first page to well past it, so the
+        # front matter (usually under 100 pages) is covered, and let the pages vote.
+        first = ranges[0][0]
+        numbers = {}
+        for row in run_helper("heads", pdf, max(1, first - 5), min(total, first + 100)).splitlines():
+            page, *lines = row.split("\t")
+            for line in lines:
+                number = head_number(line)
+                if number is not None:
+                    numbers[int(page)] = number
+                    break
+        offset = pick_offset(numbers)
+        if offset is None:
+            offset = cache.get(str(pdf))
+        if offset is None:
+            sys.exit("Couldn't read printed page numbers near there. Pass --offset N, where PDF page = printed page + N.")
+    cache[str(pdf)] = offset
+    cache_file.write_text(json.dumps(cache, indent=2) + "\n", encoding="utf-8")
+
+    for old in out_dir.glob("*.pdf"):
+        old.unlink()
+    written = []
+    for a, b in ranges:
+        if a + offset < 1 or b + offset > total:
+            sys.exit(f"Printed pp. {a}-{b} fall outside this PDF ({total} pages, offset {offset:+d}).")
+        for start in range(a, b + 1, CHUNK):
+            end = min(start + CHUNK - 1, b)
+            out = out_dir / f"{pdf.stem}-pp{start}-{end}.pdf"
+            run_helper("extract", pdf, start + offset, end + offset, out)
+            written.append((out, start, end))
+    print(f"{pdf.name}: PDF page = printed page {offset:+d}")
+    for out, a, b in written:
+        print(f"   {out}  (printed pp. {a}–{b})")
+
+
 def main() -> None:
     common = argparse.ArgumentParser(add_help=False)
     common.add_argument("--today", type=date.fromisoformat, default=date.today(),
@@ -465,6 +581,12 @@ def main() -> None:
     p = sub.add_parser("add-plan", parents=[common], help="copy a bundled plan into the journal")
     p.add_argument("name", help="plan name, as shown by `plans`")
     p.set_defaults(func=cmd_add_plan)
+
+    p = sub.add_parser("pages", parents=[common], help="pull printed pages out of the reader's own PDF")
+    p.add_argument("pdf", help="path to the PDF")
+    p.add_argument("pages", help="printed pages, e.g. 398-405 or '337, 395-410'")
+    p.add_argument("--offset", type=int, help="PDF page = printed page + OFFSET (found automatically if left out)")
+    p.set_defaults(func=cmd_pages)
 
     args = parser.parse_args()
     args.func(args, args.today)

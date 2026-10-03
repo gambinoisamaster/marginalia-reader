@@ -57,6 +57,7 @@ The script is `scripts/journal.py` in this skill's folder. With the standard ins
 - `grade ID got|partial|missed` · `drop ID` · `list [--all]` · `stats`
 - `inbox` lists new page files (converting iPhone HEIC photos to JPEG) · `archive FILE… | --all`
 - `plans` lists the reading plans bundled with the skill · `add-plan NAME` copies one into the journal.
+- `pages "PDF" RANGES` pulls printed pages (e.g. `398-405` or `"p. 337; also pp. 395–410"`) out of a PDF the reader owns, into files of up to 10 pages in `JOURNAL/.pages/` that you can read. It works out the offset between printed and PDF page numbers by itself (macOS only).
 
 For example:
 
@@ -71,7 +72,7 @@ References to read when needed:
 
 1. Run `journal.py where` (once per conversation). **If there's no journal yet**, run `journal.py init` and keep that whole first reply short: a line or two on what this is (they read, you ask a few quick questions, and everything lands in a journal of plain files they own, at the path `where` printed), then "What are you reading right now? Titles are enough." Skip the rest of this list until they answer, then treat their answer as a **Shelf** update.
 2. Read `profile.md` and `shelf.md`. Run `journal.py due --limit 3`.
-3. Find the pages: images, PDFs, or pasted text in their message. If there's nothing, and they haven't said they have no photos, run `journal.py inbox` and read what it lists.
+3. Find the pages: images, PDFs, or pasted text in their message. If there's nothing, and the book's file lists **Your copies** (a PDF they own), run `journal.py pages` for the pages they read and read the files it lists; for a plan entry, the pages come from the plan. Otherwise, unless they've said they have no photos, run `journal.py inbox` and read what it lists.
 4. Choose the mode:
 
 | The user… | Mode |
@@ -158,10 +159,10 @@ This is for days with no new reading. Pull up to five due items (`journal.py due
 
 ## Shelf
 
-- **Add a book:** create `books/<slug>.md` with notes (type, lenses that fit, connections to the rest of the shelf, spoiler watch-outs, all written without spoilers since they may read it) and add a shelf entry. If they gave a title and roughly where they are, ask nothing more. Ask for the edition only when it's a translation, since names and wording differ between translations. Record an approximate position as given ("about halfway"), treat it conservatively by staying well before it, and pin it down from the first pages they send. If they joined mid-book, leave *Previously on…* and the people or ideas empty until the first session's catch-up answer.
+- **Add a book:** if they own it as a PDF, note the path under **Your copy** in its file. Create `books/<slug>.md` with notes (type, lenses that fit, connections to the rest of the shelf, spoiler watch-outs, all written without spoilers since they may read it) and add a shelf entry. If they gave a title and roughly where they are, ask nothing more. Ask for the edition only when it's a translation, since names and wording differ between translations. Record an approximate position as given ("about halfway"), treat it conservatively by staying well before it, and pin it down from the first pages they send. If they joined mid-book, leave *Previously on…* and the people or ideas empty until the first session's catch-up answer.
 - **Pause or resume:** change the status, with no commentary.
 - **Where they are:** update **Read through**.
-- **Start a reading plan:** if it's bundled (`journal.py plans`), copy it with `journal.py add-plan NAME`; otherwise build `plans/<slug>.md` from what they send. Create `books/<slug>.md` for its log (with **Readings so far** in place of *Previously on…*) and a shelf entry with **Next entry**. Readers may start a plan anywhere, such as January in October, so track it by entry and never describe them as behind. The lens for a plan session comes from the next entry's hook, ideally threaded from today's reading.
+- **Start a reading plan:** if it's bundled (`journal.py plans`), copy it with `journal.py add-plan NAME`; otherwise build `plans/<slug>.md` from what they send. If they own the plan's texts as PDFs, record the folder and file naming under **Your copies** in the plan's book file. Then a plan day needs no photos: they say they did the entry, and you pull its pages with `journal.py pages`. Create `books/<slug>.md` for its log (with **Readings so far** in place of *Previously on…*) and a shelf entry with **Next entry**. Readers may start a plan anywhere, such as January in October, so track it by entry and never describe them as behind. The lens for a plan session comes from the next entry's hook, ideally threaded from today's reading.
 - **More of a plan:** when they send new pages of a plan's guide (the next month, say), transcribe each entry into the plan file in its existing format: title, reading, volume and pages, a hook in your own words, and any note.
 - **Finished a book:** run the capstone in `references/rituals.md`.
 

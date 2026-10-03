@@ -1,4 +1,5 @@
 """Tests for scripts/journal.py. Standard library only: python3 -m unittest discover -s tests"""
+import importlib.util
 import json
 import os
 import shutil
@@ -13,6 +14,34 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SCRIPT = ROOT / "scripts" / "journal.py"
 TODAY = "2026-10-03"
+
+_spec = importlib.util.spec_from_file_location("journal", SCRIPT)
+journal = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(journal)
+
+
+def text_pdf(path: Path, page_lines: list) -> None:
+    """Write a minimal PDF with one line of text per page (plain ASCII, no parentheses)."""
+    objects = ["<< /Type /Catalog /Pages 2 0 R >>", "",
+               "<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>"]
+    kids = []
+    for line in page_lines:
+        stream = f"BT /F1 12 Tf 72 720 Td ({line}) Tj ET"
+        objects.append(f"<< /Length {len(stream)} >>\nstream\n{stream}\nendstream")
+        objects.append(f"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
+                       f"/Resources << /Font << /F1 3 0 R >> >> /Contents {len(objects)} 0 R >>")
+        kids.append(len(objects))
+    objects[1] = f"<< /Type /Pages /Kids [{' '.join(f'{k} 0 R' for k in kids)}] /Count {len(kids)} >>"
+    out = bytearray(b"%PDF-1.4\n")
+    offsets = []
+    for number, body in enumerate(objects, 1):
+        offsets.append(len(out))
+        out += f"{number} 0 obj\n{body}\nendobj\n".encode()
+    xref = len(out)
+    out += f"xref\n0 {len(objects) + 1}\n0000000000 65535 f \n".encode()
+    out += "".join(f"{o:010d} 00000 n \n" for o in offsets).encode()
+    out += f"trailer\n<< /Size {len(objects) + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n".encode()
+    path.write_bytes(bytes(out))
 
 
 def tiny_png(path: Path) -> None:
@@ -206,6 +235,56 @@ class InboxTests(JournalTestCase):
         self.assertIn("IMG_0001.jpg", out)
         self.assertTrue((inbox / "IMG_0001.jpg").is_file())
         self.assertTrue((inbox / "done" / TODAY / "IMG_0001.HEIC").is_file())
+
+
+class PageNumberTests(unittest.TestCase):
+    def test_running_heads_give_up_their_page_numbers(self):
+        self.assertEqual(journal.head_number("390 SIR CHARLES LYELL"), 390)
+        self.assertEqual(journal.head_number("UNIFORMITY OF CHANGE 399"), 399)
+        self.assertEqual(journal.head_number("UNIFORMITY OF CHANGE 4O9"), 409)  # OCR letter O
+        self.assertIsNone(journal.head_number("T H E A M E R I C A N S C H O L A R I I"))
+        self.assertIsNone(journal.head_number("THE AMERICAN SCHOLAR"))
+        self.assertIsNone(journal.head_number(""))
+
+    def test_one_misread_page_is_outvoted(self):
+        self.assertEqual(journal.pick_offset({404: 390, 405: 397, 407: 399, 408: 400}), 8)
+        self.assertIsNone(journal.pick_offset({406: 398}))
+        self.assertIsNone(journal.pick_offset({}))
+
+    def test_page_ranges_in_the_plan_formats(self):
+        self.assertEqual(journal.parse_ranges("398-405"), [(398, 405)])
+        self.assertEqual(journal.parse_ranges("pp. 71–87"), [(71, 87)])
+        self.assertEqual(journal.parse_ranges("p. 337; also pp. 395–410"), [(337, 337), (395, 410)])
+        self.assertEqual(journal.parse_ranges("119–120, 388–394"), [(119, 120), (388, 394)])
+        with self.assertRaises(SystemExit):
+            journal.parse_ranges("chapter five")
+        with self.assertRaises(SystemExit):
+            journal.parse_ranges("20-10")
+
+
+@unittest.skipUnless(sys.platform == "darwin" and shutil.which("swiftc"), "page extraction uses macOS PDFKit")
+class PagesCommandTests(JournalTestCase):
+    def setUp(self):
+        super().setUp()
+        heads = ["Title page", "Contents", "Preface"]  # front matter: 3 unnumbered pages
+        heads += [f"{n} THE AUTHOR" if n % 2 == 0 else f"THE BOOK {n}" for n in range(1, 31)]
+        self.pdf = self.tmp / "book.pdf"
+        text_pdf(self.pdf, heads)
+
+    def test_finds_the_offset_and_splits_long_readings(self):
+        out = self.run_cli("pages", str(self.pdf), "5-17").stdout
+        self.assertIn("PDF page = printed page +3", out)
+        files = sorted(p.name for p in (self.home / ".pages").glob("*.pdf"))
+        self.assertEqual(files, ["book-pp15-17.pdf", "book-pp5-14.pdf"])
+
+    def test_each_run_replaces_the_previous_extracts(self):
+        self.run_cli("pages", str(self.pdf), "5-17")
+        self.run_cli("pages", str(self.pdf), "2", "--offset", "3")
+        self.assertEqual([p.name for p in (self.home / ".pages").glob("*.pdf")], ["book-pp2-2.pdf"])
+
+    def test_refuses_pages_outside_the_pdf(self):
+        self.run_cli("pages", str(self.pdf), "29-40", ok=False)
+        self.run_cli("pages", str(self.tmp / "missing.pdf"), "1-2", ok=False)
 
 
 if __name__ == "__main__":

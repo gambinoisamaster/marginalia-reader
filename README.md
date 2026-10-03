@@ -50,6 +50,7 @@ Most of us read for input and keep very little. The fix is well established. **R
 - A running *Previously on…* recap and cast list for each book (a lifesaver for Russian novels).
 - Questions tuned to the kind of book: plot and character for novels, argument for nonfiction, image and form for poetry, and short exercises for books about writing.
 - Reading plans, with the complete Harvard Classics *Fifteen Minutes a Day* guide included: all 366 days.
+- **Own the books as PDFs?** Tell it where they are once, and it reads each day's assigned pages straight from your copy, so plan days need no photos. It finds the right pages even when the PDF's numbering differs from the printed book's. (macOS; the full Harvard Classics set is free on the Internet Archive.)
 - A commonplace book for lines worth keeping, plus weekly and monthly reflections.
 - Scanning from iPhone to Mac with Continuity Camera.
 
@@ -118,7 +119,8 @@ python3 ~/.claude/skills/marginalia/scripts/journal.py due
 |---|---|
 | `SKILL.md` | The instructions Claude follows |
 | `references/` | Question craft by kind of book, journal formats, weekly and monthly rituals |
-| `scripts/journal.py` | Creates the journal, runs the spaced-review queue and the photo inbox (Python standard library only) |
+| `scripts/journal.py` | Creates the journal, runs the spaced-review queue and the photo inbox, and pulls pages out of your PDFs (Python standard library only) |
+| `scripts/pdftool.swift` | A tiny macOS PDF helper, built automatically the first time it's needed |
 | `templates/journal/` | A new reader's starting journal |
 | `plans/` | Reading plans |
 | `tests/` | Run with `python3 -m unittest discover -s tests` |
