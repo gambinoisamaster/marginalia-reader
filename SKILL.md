@@ -34,11 +34,11 @@ Why it works this way:
 
 ## The reader
 
-If the journal has a `profile.md`, read it at the start of each session. It's the reader in their own words: what they read for, how they like sessions, and anything to accommodate (ADHD, limited time, a writing practice, reading in a second language). Let it shape your tone, the session length, and which questions you favor. If it's missing or still blank, use the defaults here, and in an early session offer once to fill it in with two or three quick questions.
+If the journal has a `profile.md`, read it at the start of each session. It's the reader in their own words: what they read for, how they like sessions, and anything to accommodate (ADHD, limited time, a writing practice, reading in a second language). Let it shape your tone, the session length, and which questions you favor. While it's still blank, use the defaults here. After their first completed session, add one optional line after the lens, once: they can tell you a bit about themselves as a reader anytime ("let's fill in my profile"), and you'll keep it in `profile.md`.
 
 ## Where things live
 
-The journal (JOURNAL) is a folder of plain Markdown files that belongs to the reader. `journal.py where` prints its location: `~/Documents/Marginalia` unless the reader has set `MARGINALIA_HOME`. If no journal exists yet, run `journal.py init`, which creates one from this skill's templates. Then ask what they're reading right now; titles alone are enough to start.
+The journal (JOURNAL) is a folder of plain Markdown files that belongs to the reader. `journal.py where` prints its location: `~/Documents/Marginalia` unless the reader has set `MARGINALIA_HOME`. `journal.py init` creates it from this skill's templates.
 
 | | |
 |---|---|
@@ -46,7 +46,7 @@ The journal (JOURNAL) is a folder of plain Markdown files that belongs to the re
 | `shelf.md` | Each book's status, how far they've read, last session, and lens for next time; their loose lineup on top |
 | `books/<slug>.md` | Per book: notes, *Previously on…*, people or ideas so far, then the session log |
 | `plans/<slug>.md` | Reading plans with a fixed sequence of entries, such as the Harvard Classics guide |
-| `review-queue.json` | Spaced-review questions. Only touch it through the script. |
+| `review-queue.json` | Spaced-review questions, created with the first keeper. Only touch it through the script. |
 | `commonplace.md` · `writing.md` · `reflections.md` | Kept lines · writing exercises · weekly and monthly reflections |
 | `inbox/` | Page photos and scans dropped in from Finder or a phone |
 
@@ -69,7 +69,7 @@ References to read when needed:
 
 ## At the start of each session
 
-1. Run `journal.py where` (once per conversation). If there's no journal yet, run `journal.py init` and start with "What are you reading right now?"
+1. Run `journal.py where` (once per conversation). **If there's no journal yet**, run `journal.py init` and keep that whole first reply short: a line or two on what this is (they read, you ask a few quick questions, and everything lands in a journal of plain files they own, at the path `where` printed), then "What are you reading right now? Titles are enough." Skip the rest of this list until they answer, then treat their answer as a **Shelf** update.
 2. Read `profile.md` and `shelf.md`. Run `journal.py due --limit 3`.
 3. Find the pages: images, PDFs, or pasted text in their message. If there's nothing, and they haven't said they have no photos, run `journal.py inbox` and read what it lists.
 4. Choose the mode:
@@ -81,7 +81,7 @@ References to read when needed:
 | has no new reading, is low on energy, or says "rerun" | **Rerun** |
 | says "weekly", "monthly", or "long session", or has finished a book | `references/rituals.md` |
 | adds, pauses, or finishes a book; says where they are; starts or extends a reading plan | **Shelf** |
-| types `/marginalia` alone, or asks "where am I?" | The shelf at a glance (a few lines), then "Send pages, warm up, or rerun?" |
+| types `/marginalia` alone, or asks "where am I?" | The shelf at a glance (a few lines), then "Send pages or warm up?", adding "or rerun?" only when something is due. With an empty shelf, ask what they're reading instead. |
 
 While the shelf is still mostly empty or `?` (the first week or so), don't make them fill it all in. Ask only about the book in front of them.
 
@@ -89,11 +89,13 @@ While the shelf is still mostly empty or `?` (the first week or so), don't make 
 
 ### 1. Work out what they read
 
-Get the book and span from running heads, page and chapter numbers, or their words. The shelf usually tells you which book it is. If you truly can't tell, ask one short question. If this is the first session for a book, add it to the shelf (see **Shelf**), and ask for the edition or position once, in that same message, unless their message already says. For essays and other collections, the piece they name is the position, so don't ask about reading order. If they read only part of an entry or chapter, log what they read and don't ask about the rest.
+Get the book and span from running heads, page and chapter numbers, or their words. The shelf usually tells you which book it is. If you truly can't tell, ask one short question. If the book isn't on the shelf yet, add it (see **Shelf**). Pin down **Read through** from the pages themselves or what they tell you. For essays and other collections, the piece they name is the position, so don't ask about reading order. If they read only part of an entry or chapter, log what they read and don't ask about the rest.
 
 Read every page closely. Then open the book's file and read the notes, *Previously on…*, people or ideas so far, and the last two or three sessions. Those let you ask tie-in questions and avoid repeating yourself.
 
-**No pages?** (They read in bed, or have a physical book, or forgot to take photos.) Run the session anyway. Work from their description and what you know of the book, and say plainly that you're going from memory. Keep the questions to what they told you they read, and never go past it.
+**Joined mid-book?** If this is the first session with a book they started before joining (its *Previously on…* is still empty), make Q1 "Catch me up: what's happened so far, in a few lines?" Then build *Previously on…* and the people or ideas from their answer and today's pages. It's spoiler-safe because it comes from them, and it's a recall exercise in itself.
+
+**No pages?** (They read in bed, or have a physical book, or forgot to take photos.) Run the session anyway. Work from their description and what you know of the book, and say plainly that you're going from memory. Keep the questions to what they told you they read, and never go past it. The first time it comes up, mention in one line that they can also drop photos or scans into the journal's `inbox/` folder; its README explains scanning from a phone.
 
 ### 2. Choose today's three plus one rerun
 
@@ -150,18 +152,20 @@ Starting is the hardest part, especially after a gap. If more than a week or so 
 
 ## Rerun (review only)
 
-This is for days with no new reading. Pull up to five due items (`journal.py due --limit 5`), ask them together, respond, and grade each. If nothing is due, ask three questions drawn from recent sessions across books instead. Tell them a rerun counts as a full reading day, because for retention it does.
+This is for days with no new reading. Pull up to five due items (`journal.py due --limit 5`), ask them together, respond, and grade each. If nothing is due, ask three questions drawn from recent sessions across books instead. If there are no sessions yet, say so warmly and suggest a warm-up instead. Tell them a rerun counts as a full reading day, because for retention it does.
 
 **Keep the queue light.** A pile of overdue questions is fine; they wait without harm. If `due` passes about fifteen, mention once, lightly, that a rerun day would clear some (as an option, never a debt), and `drop` keepers that no longer seem worth it.
 
 ## Shelf
 
-- **Add a book:** create `books/<slug>.md` with notes (type, lenses that fit, connections to the rest of the shelf, spoiler watch-outs, all written without spoilers since they may read it) and add a shelf entry. Ask for the edition and starting point once.
+- **Add a book:** create `books/<slug>.md` with notes (type, lenses that fit, connections to the rest of the shelf, spoiler watch-outs, all written without spoilers since they may read it) and add a shelf entry. If they gave a title and roughly where they are, ask nothing more. Ask for the edition only when it's a translation, since names and wording differ between translations. Record an approximate position as given ("about halfway"), treat it conservatively by staying well before it, and pin it down from the first pages they send. If they joined mid-book, leave *Previously on…* and the people or ideas empty until the first session's catch-up answer.
 - **Pause or resume:** change the status, with no commentary.
 - **Where they are:** update **Read through**.
 - **Start a reading plan:** if it's bundled (`journal.py plans`), copy it with `journal.py add-plan NAME`; otherwise build `plans/<slug>.md` from what they send. Create `books/<slug>.md` for its log (with **Readings so far** in place of *Previously on…*) and a shelf entry with **Next entry**. Readers may start a plan anywhere, such as January in October, so track it by entry and never describe them as behind. The lens for a plan session comes from the next entry's hook, ideally threaded from today's reading.
 - **More of a plan:** when they send new pages of a plan's guide (the next month, say), transcribe each entry into the plan file in its existing format: title, reading, volume and pages, a hook in your own words, and any note.
 - **Finished a book:** run the capstone in `references/rituals.md`.
+
+**Replying after a shelf update:** confirm what's on the shelf in a line or two, mention any default you picked, give each new book a lens for next time, and say how to start: "After you read, send pages or just tell me what you covered, or say 'warm up' before you start." Don't end on a question.
 
 ## Ground rules
 

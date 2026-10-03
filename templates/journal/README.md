@@ -32,6 +32,6 @@ Your reading journal, kept by the Marginalia skill in Claude Code. You don't nee
 | `writing.md` | Writing exercises and experiments |
 | `reflections.md` | Weekly and monthly look-backs |
 | `inbox/` | Drop page photos and scans here. Processed ones move to `inbox/done/`, which you can empty whenever you like. |
-| `review-queue.json` | The spaced-review queue (the skill manages it) |
+| `review-queue.json` | The spaced-review queue, which appears after your first session (the skill manages it) |
 
 **From an iPhone (on a Mac):** open `inbox` in Finder, Control-click an empty spot, choose **Import from iPhone or iPad → Scan Documents**, and scan the pages. The scan saves straight into this folder.

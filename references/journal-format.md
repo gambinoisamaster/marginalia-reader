@@ -19,8 +19,8 @@ A **Lineup** section on top, then one section per book:
     - **Last session:** 2026-10-03
     - **Lens for next time:** <one specific, spoiler-free thing to notice>
 
-- `?` means unknown. Ask once, at the first session for that book.
-- **Read through** is the spoiler line: the last chapter (or page) they've finished. For a stop mid-chapter, write `Part 2, ch. 7 (to p. 142, mid-chapter)`. For essay collections, it names the latest essay (`I:8 "Of idleness"`). The book file's *argument so far* lists every essay read, and that list, not the numbering, is what counts as known.
+- `?` means unknown. Fill it in from the first pages they send or what they mention. Ask only for a translation's edition.
+- **Read through** is the spoiler line: the last chapter (or page) they've finished. For a stop mid-chapter, write `Part 2, ch. 7 (to p. 142, mid-chapter)`. Record an approximate position as given (`about halfway (exact chapter ?)`) and treat it conservatively until the first session pins it down. For essay collections, it names the latest essay (`I:8 "Of idleness"`). The book file's *argument so far* lists every essay read, and that list, not the numbering, is what counts as known.
 - Status is `reading`, `paused`, or `finished 2026-11-20`.
 - A reading plan's entry has **Next entry:** (e.g. `Jan 6`) instead of **Read through:**. Its lens comes from the next entry's hook in the plan.
 - When the first book is added, remove the "No books yet" placeholder line.
